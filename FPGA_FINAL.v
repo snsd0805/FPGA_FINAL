@@ -78,7 +78,7 @@ module FPGA_FINAL(
 		
 		// 下方操作球的運行
 		// 除頻用
-		if(ballTime<5)
+		if(ballTime<2)
 			ballTime <= ballTime+1;
 		else
 		//開始判斷球的行進
@@ -104,13 +104,43 @@ module FPGA_FINAL(
 				if(horizonPosition==1)
 					if(ball_position<7)
 						ball_position <= ball_position+1;	// 範圍內右移
-					else	
+					else
+					begin
 						horizonPosition = -1;				// 超過範圍就轉向左邊
+						ball_position <= ball_position-1;
+					end
 				else if(horizonPosition==-1)
 					if(ball_position>0)
 						ball_position <= ball_position-1;	// 範圍內左移
 					else
+					begin
 						horizonPosition = 1;					// 超過範圍就轉向右邊
+						ball_position <= ball_position+1;
+					end
+					
+				// 判斷特殊狀況(碰到板子)
+				if(ball_y_position==1)
+					if(ball_position==plat_position)
+					begin
+						horizonPosition = -1;
+						upPosition = 1;
+					end 
+					else if(ball_position==plat_position+1)
+					begin
+						upPosition = 1;
+						ball_y_position <= ball_y_position+1;
+					end
+					else if(ball_position==plat_position+2)
+					begin
+						horizonPosition = 1;
+						upPosition = 1;
+					end
+					else
+					begin
+						horizonPosition = 0;
+						ball_y_position <= ball_y_position-1;
+					end
+				
 			end
 		end
 	end
