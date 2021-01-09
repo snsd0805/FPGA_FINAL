@@ -7,7 +7,8 @@ module FPGA_FINAL(
 	output testLED
 );
 
-
+	reg [7:0]blockFirst =  8'b11111111;
+	reg [7:0]blockSecond = 8'b11111111;
 
 	reg [2:0]plat_position; // 板子位置
 	reg [2:0]ball_position;	// 球  位置
@@ -169,7 +170,7 @@ module FPGA_FINAL(
 						horizonPosition = 0;
 						ball_y_position <= ball_y_position-1;
 					end
-				
+				// 判斷特殊狀態
 			end
 		end
 	end
@@ -220,6 +221,9 @@ module FPGA_FINAL(
 			end
 			else
 				led[8:15] = 8'b11111111;
+		
+		//開始畫磚塊
+		led[16:23] = {~blockFirst[row], ~blockSecond[row], 6'b111111};
 	end
 endmodule
 
