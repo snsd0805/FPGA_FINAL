@@ -184,8 +184,10 @@ module FPGA_FINAL(
 						blockSecond[ball_position] = 0;
 
 						if(upPosition) upPosition = 0;
-						else upPosition = 1;
-						
+						else begin
+							horizonPosition = -horizonPosition;
+							upPosition = 1;
+						end
 						if(ball_position==0) horizonPosition = 1;
 						if(ball_position==7) horizonPosition = -1;
 
@@ -193,7 +195,20 @@ module FPGA_FINAL(
 						if(upPosition) ball_y_position <= ball_y_position +1;
 						else ball_y_position <= ball_y_position -1;
 					end
-				
+				// // 判斷特殊狀態
+				if(ball_y_position==7)
+					if(blockFirst[ball_position]==1)
+					begin
+						blockFirst[ball_position] = 0;
+
+						upPosition = 0;
+						
+						if(ball_position==0) horizonPosition = 1;
+						if(ball_position==7) horizonPosition = -1;
+
+						ball_position <= ball_position + horizonPosition;
+						ball_y_position <= ball_y_position -1;
+					end
 			end
 		end
 	end
