@@ -196,18 +196,3 @@ module buttondivfreq(input CLK, output reg CLK_div);
 	end
 endmodule
 
-
-// 球 飛行用的除頻器
-module balldivfreq(input CLK, output reg CLK_div);
-	reg[26:0] Count;
-	always @(posedge CLK)
-	begin
-		if(Count>10000000)
-			begin
-				Count <= 27'b0;
-				CLK_div <= ~CLK_div;
-			end
-		else
-			Count <= Count + 1'b1;
-	end
-endmodule
