@@ -1,6 +1,6 @@
 
 module FPGA_FINAL(
-	input CLK,
+	input CLK, reset, 
 	output reg [0:27] led,
 	input left, right,
 	input throw,
@@ -17,8 +17,6 @@ module FPGA_FINAL(
 	integer horizonPosition;
 
 	reg handsOn; 				// bool，紀錄球現在丟出去了沒
-	reg throwFlag;				// 判斷丟球，避免兩 always 修改同一 reg 發生衝突
-
 
 	
 	initial
@@ -49,6 +47,20 @@ module FPGA_FINAL(
 	// 判斷 所有操作
 	always @(posedge buttonclk)
 	begin
+		
+		
+		if(reset)
+		begin
+			plat_position <= 3'b010;		// 預設在 x=2 的位置
+			ball_position <= 3'b011;		// 預設在 x=3 的位置
+			ball_y_position <= 3'b010;	// 預設在 y=1 的位置
+			handsOn = 1;				// 預設為 為丟出狀態
+			
+			upPosition = 1;				// 預設為 向上
+			horizonPosition = 0;		// 預設為 正中間方向
+		end
+
+
 		// 判斷 向左
 		if(left)
 			if(plat_position>0)
