@@ -110,6 +110,7 @@ module FPGA_FINAL(
 				else
 					if(ball_y_position>1)
 						ball_y_position <= ball_y_position-1;
+
 				
 
 				// 判斷水平方向
@@ -134,7 +135,8 @@ module FPGA_FINAL(
 				if(ball_y_position==1)
 					if(ball_position==plat_position)
 					begin
-						horizonPosition = -1;
+						if(horizonPosition==0) horizonPosition = -1;
+						else ball_y_position <= ball_y_position+1;
 						upPosition = 1;
 					end 
 					else if(ball_position==plat_position+1)
@@ -144,7 +146,22 @@ module FPGA_FINAL(
 					end
 					else if(ball_position==plat_position+2)
 					begin
+						if(horizonPosition==0) horizonPosition = 1;
+						else ball_y_position <= ball_y_position+1;
+						upPosition = 1;
+					end
+					else if(ball_position==plat_position-1 && horizonPosition==1)
+					begin
+						horizonPosition = -1;
+						//ball_position <= ball_position+1;
+						// ball_y_position <= ball_y_position-1;
+						upPosition = 1;
+					end
+					else if(ball_position==plat_position+3 && horizonPosition==-1)
+					begin
 						horizonPosition = 1;
+						//ball_position <= ball_position-1;
+						// ball_y_position <= ball_y_position-1;
 						upPosition = 1;
 					end
 					else
