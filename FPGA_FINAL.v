@@ -52,6 +52,9 @@ module FPGA_FINAL(
 		
 		if(reset)
 		begin
+			blockFirst =  8'b11111111;
+			blockSecond = 8'b11111111;
+			
 			plat_position <= 3'b010;		// 預設在 x=2 的位置
 			ball_position <= 3'b011;		// 預設在 x=3 的位置
 			ball_y_position <= 3'b010;	// 預設在 y=1 的位置
@@ -154,15 +157,15 @@ module FPGA_FINAL(
 					else if(ball_position==plat_position-1 && horizonPosition==1)
 					begin
 						horizonPosition = -1;
-						//ball_position <= ball_position+1;
-						// ball_y_position <= ball_y_position-1;
+						ball_position <= ball_position-1;
+						ball_y_position <= ball_y_position+1;
 						upPosition = 1;
 					end
 					else if(ball_position==plat_position+3 && horizonPosition==-1)
 					begin
 						horizonPosition = 1;
-						//ball_position <= ball_position-1;
-						// ball_y_position <= ball_y_position-1;
+						ball_position <= ball_position+1;
+						ball_y_position <= ball_y_position+1;
 						upPosition = 1;
 					end
 					else
@@ -170,7 +173,27 @@ module FPGA_FINAL(
 						horizonPosition = 0;
 						ball_y_position <= ball_y_position-1;
 					end
-				// 判斷特殊狀態
+
+
+
+
+				// // 判斷特殊狀態
+				if(ball_y_position==6)
+					if(blockSecond[ball_position]==1)
+					begin
+						blockSecond[ball_position] = 0;
+
+						if(upPosition) upPosition = 0;
+						else upPosition = 1;
+						
+						if(ball_position==0) horizonPosition = 1;
+						if(ball_position==7) horizonPosition = -1;
+
+						ball_position <= ball_position + horizonPosition;
+						if(upPosition) ball_y_position <= ball_y_position +1;
+						else ball_y_position <= ball_y_position -1;
+					end
+				
 			end
 		end
 	end
