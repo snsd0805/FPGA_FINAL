@@ -25,7 +25,12 @@ module FPGA_FINAL(
 
 	reg handsOn; 				// bool，紀錄球現在丟出去了沒
 	reg gameOverFlag;
-
+	
+	reg showBonus;         // bool 顯示額外球
+	reg [2:0] Bonus_x;  // 額外球的位子x
+	reg [2:0] Bonus_y;  // 額外球的位子x
+	
+	reg ball_is_on_the_gronud; // 檢查球是否沒被盤子接住
 	
 	initial
 	begin
@@ -47,7 +52,9 @@ module FPGA_FINAL(
 		horizonPosition = 0;			// 預設為 正中間方向
 		
 		gameOverFlag = 0;
-
+		
+		showBonus = 0;
+		ball_is_on_the_gronud = 0;
 	end
 	
 	
@@ -59,6 +66,7 @@ module FPGA_FINAL(
 	
 	
 	integer ballTime;
+	integer doubleTime;
 	// 判斷 所有操作
 	always @(posedge buttonclk)
 	begin
@@ -86,6 +94,8 @@ module FPGA_FINAL(
 				upPosition = 1;				// 預設為 向上
 				horizonPosition = 0;		// 預設為 正中間方向
 				
+				showBonus = 0;
+				ball_is_on_the_gronud = 0;
 			end
 
 
@@ -116,7 +126,7 @@ module FPGA_FINAL(
 
 				
 			
-			// 下方操作球的運行
+			// 下方操作球的運 行
 			// 除頻用
 			if(ballTime<2)
 				ballTime <= ballTime+1;
@@ -196,6 +206,8 @@ module FPGA_FINAL(
 						begin
 							horizonPosition = 0;
 							ball_y_position <= ball_y_position-1;
+							showBonus = 0;
+							ball_is_on_the_gronud = 1;
 							
 							life = life*2;		// 扣除生命值
 							if(life==3'b000)
@@ -251,6 +263,57 @@ module FPGA_FINAL(
 							ball_y_position <= ball_y_position -1;
 						end
 				end
+			end
+			
+			// Bonus ball 除頻 ， 每五秒從左邊射一發
+			if(doubleTime<50 && showBonus == 0 && handsOn == 0 && ball_is_on_the_gronud == 0)
+			begin
+				doubleTime <= doubleTime+1;
+				Bonus_x = plat_position ;
+				Bonus_y = 1;
+			end
+			else
+			begin
+				if(handsOn == 0)
+				begin
+					doubleTime <= 0;
+					showBonus = 1;
+					if(Bonus_y == 7)
+					begin
+						showBonus = 0;
+					end
+					if(Bonus_y < 7)
+					begin
+						Bonus_y = Bonus_y + 1;
+					end
+						
+					// Bonus ball 撞到第一排磚塊
+					if((Bonus_y == 6 && blockSecond[Bonus_x] == 1))
+					begin
+						count_digit <= count_digit + 1'b1;
+						if(count_digit == 4'b1001)
+						begin
+							count_digit <= 4'b0;
+							count_ten = 1;
+						end
+						blockSecond[Bonus_x] = 0;
+						showBonus = 0;
+					end
+					
+					// Bonus ball 撞到第二排磚塊
+					if((Bonus_y == 7 && blockFirst[Bonus_x] == 1))
+					begin
+						count_digit <= count_digit + 1'b1;
+						if(count_digit == 4'b1001)
+						begin
+							count_digit <= 4'b0;
+							count_ten = 1;
+						end
+						blockFirst[Bonus_x] = 0;
+						showBonus = 0;
+					end
+				end
+				// Bonus ball
 			end
 		end
 	end
@@ -319,6 +382,24 @@ module FPGA_FINAL(
 			//開始畫磚塊
 			led[16:23] = {~blockFirst[row], ~blockSecond[row], 6'b111111};
 			
+			// 畫 Bonus ball
+			if(showBonus == 1)
+				if(row==Bonus_x)
+				begin
+					reg [7:0] map;
+					case(Bonus_y)
+						3'b000: map = 8'b11111110 ;
+						3'b001: map = 8'b11111101 ;
+						3'b010: map = 8'b11111011 ;
+						3'b011: map = 8'b11110111 ;
+						3'b100: map = 8'b11101111 ;
+						3'b101: map = 8'b11011111 ;
+						3'b110: map = 8'b10111111 ;
+						3'b111: map = 8'b01111111 ;
+					endcase
+					led[8:15] = map;
+				end
+
 			// 顯示分數
 			if(count_digit_enable == 0)
 			begin
