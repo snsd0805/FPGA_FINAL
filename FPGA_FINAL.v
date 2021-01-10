@@ -5,8 +5,8 @@ module FPGA_FINAL(
 	input left, right,
 	input throw,
 	output testLED,
-	output reg a,b,c,d,e,f,g;
-	output [1:0] count_digit_enable
+	output reg a,b,c,d,e,f,g,
+	output reg [0:1] COM
 );
 
 	reg [7:0]blockFirst =  8'b11111111;
@@ -36,7 +36,8 @@ module FPGA_FINAL(
 		ball_position = 3'b011;		// 預設在 x=3 的位置
 		ball_y_position = 3'b010;	// 預設在 y=1 的位置
 		handsOn = 1;					// 預設為 為丟出狀態
-		score = 3'b0;               // 分數預設0
+		count_digit = 4'b0;               // 分數預設0
+		count_ten = 0;
 		
 		upPosition = 1;				// 預設為 向上
 		horizonPosition = 0;			// 預設為 正中間方向
@@ -189,11 +190,11 @@ module FPGA_FINAL(
 					if(ball_y_position==6)
 						if(blockSecond[ball_position]==1)
 						begin
-							score_digit <= score_digit + 1'b1;
-							if(score_digit == 4'b1010)
+							count_digit <= count_digit + 1'b1;
+							if(count_digit == 4'b1010)
 							begin
-								score_digit <= 4'b0;
-								socer_ten = 1;
+								count_digit <= 4'b0;
+								count_ten = 1;
 							end
 							blockSecond[ball_position] = 0;
 
@@ -213,11 +214,11 @@ module FPGA_FINAL(
 					if(ball_y_position==7)
 						if(blockFirst[ball_position]==1)
 						begin
-							score_digit <= score_digit + 1'b1;
-							if(score_digit == 4'b1010)
+							count_digit <= count_digit + 1'b1;
+							if(count_digit == 4'b1010)
 							begin
-								score_digit <= 4'b0;
-								socer_ten = 1;
+								count_digit <= 4'b0;
+								count_ten = 1;
 							end
 							blockFirst[ball_position] = 0;
 
@@ -239,6 +240,7 @@ module FPGA_FINAL(
 	always @(posedge divclk)
 	begin
 		reg [0:2]row;
+		reg count_digit_enable;
 		
 		// 跑 0~7 行
 		if(row>=7)
@@ -283,31 +285,43 @@ module FPGA_FINAL(
 		
 		//開始畫磚塊
 		led[16:23] = {~blockFirst[row], ~blockSecond[row], 6'b111111};
+		
+		// 顯示分數
+		if(count_digit_enable == 0)
+		begin
+			count_digit_enable = 1;
+			COM = 2'b10;
+		end
+		else
+		//begin
+			count_digit_enable = 0;
+			COM = 2'b01;
+		//end
+		// 顯示個位
+		if(count_digit_enable == 0)
+		begin
+			case(count_digit)
+				4'b0000:{a,b,c,d,e,f,g}=7'b0000001;
+				4'b0001:{a,b,c,d,e,f,g}=7'b1001111;
+				4'b0010:{a,b,c,d,e,f,g}=7'b0010010;
+				4'b0011:{a,b,c,d,e,f,g}=7'b0000110;
+				4'b0100:{a,b,c,d,e,f,g}=7'b1001100;
+				4'b0101:{a,b,c,d,e,f,g}=7'b0100100;
+				4'b0110:{a,b,c,d,e,f,g}=7'b0100000;
+				4'b0111:{a,b,c,d,e,f,g}=7'b0001111;
+				4'b1000:{a,b,c,d,e,f,g}=7'b0000000;
+				4'b1001:{a,b,c,d,e,f,g}=7'b0000100;
+			endcase
+		end
+		// 顯示十位
+		else
+		begin
+			case(count_ten)
+				1'b0:{a,b,c,d,e,f,g}=7'b0000001;
+				1'b1:{a,b,c,d,e,f,g}=7'b1001111;
+			endcase
+		end
 	end
-
-	// 顯示分數
-	if(count_digit_enable == 1)
-		count_digit_enable = 0;
-	else
-		count_digit_enable = 1;
-	if(count_digit_enable) // 顯示個位
-		case(count_digit)
-			4'b0000:{a,b,c,d,e,f,g}=7'b0000001;
-			4'b0001:{a,b,c,d,e,f,g}=7'b1001111;
-			4'b0010:{a,b,c,d,e,f,g}=7'b0010010;
-			4'b0011:{a,b,c,d,e,f,g}=7'b0000110;
-			4'b0100:{a,b,c,d,e,f,g}=7'b1001100;
-			4'b0101:{a,b,c,d,e,f,g}=7'b0100100;
-			4'b0110:{a,b,c,d,e,f,g}=7'b0100000;
-			4'b0111:{a,b,c,d,e,f,g}=7'b0001111;
-			4'b1000:{a,b,c,d,e,f,g}=7'b0000000;
-			4'b1001:{a,b,c,d,e,f,g}=7'b0000100;
-		endcase
-	else // 顯示十位
-		case(count_ten)
-			1'b0:{a,b,c,d,e,f,g}=7'b0000001;
-			1'b1:{a,b,c,d,e,f,g}=7'b1001111;
-		endcase
 endmodule
 
 
@@ -341,4 +355,3 @@ module buttondivfreq(input CLK, output reg CLK_div);
 			Count <= Count + 1'b1;
 	end
 endmodule
-
