@@ -2,6 +2,7 @@
 module FPGA_FINAL(
 	input CLK, reset, start,
 	output reg [0:27] led,
+	output reg [2:0] life,
 	input left, right,
 	input throw,
 	output testLED,
@@ -23,6 +24,7 @@ module FPGA_FINAL(
 	integer horizonPosition;
 
 	reg handsOn; 				// bool，紀錄球現在丟出去了沒
+	reg gameOverFlag;
 
 	
 	initial
@@ -31,6 +33,8 @@ module FPGA_FINAL(
 		led[0:23] = 23'b11111111111111111111;
 		led[27] = 1;
 		led[24:26] = 3'b000;
+
+		life = 3'b111;
 		
 		plat_position = 3'b010;		// 預設在 x=2 的位置
 		ball_position = 3'b011;		// 預設在 x=3 的位置
@@ -41,6 +45,9 @@ module FPGA_FINAL(
 		
 		upPosition = 1;				// 預設為 向上
 		horizonPosition = 0;			// 預設為 正中間方向
+		
+		gameOverFlag = 0;
+
 	end
 	
 	
@@ -61,8 +68,15 @@ module FPGA_FINAL(
 			
 			if(reset)
 			begin
-				blockFirst =  8'b11111111;
-				blockSecond = 8'b11111111;
+				if(life==3'b000)
+				begin
+					blockFirst =  8'b11111111;
+					blockSecond = 8'b11111111;
+
+					life = 3'b111;
+					gameOverFlag = 0;
+
+				end
 				
 				plat_position <= 3'b010;		// 預設在 x=2 的位置
 				ball_position <= 3'b011;		// 預設在 x=3 的位置
@@ -71,6 +85,7 @@ module FPGA_FINAL(
 				
 				upPosition = 1;				// 預設為 向上
 				horizonPosition = 0;		// 預設為 正中間方向
+				
 			end
 
 
@@ -181,6 +196,11 @@ module FPGA_FINAL(
 						begin
 							horizonPosition = 0;
 							ball_y_position <= ball_y_position-1;
+							
+							life = life*2;		// 扣除生命值
+							if(life==3'b000)
+								gameOverFlag = 1;
+							
 						end
 
 
@@ -251,52 +271,68 @@ module FPGA_FINAL(
 		// 設定這次要畫第 n 行
 		led[24:26] = row;
 		
-		// 開始畫板子 ( R )
-		if(row==plat_position || row==plat_position+1 || row==plat_position+2)
-			led[0:7] = 8'b11111110;
-		else
-			led[0:7] = 8'b11111111;
-			
-			
-		// 開始畫球 ( G )
-		if(handsOn)
-			if(row==plat_position+1)		// 放在正中間
-				led[8:15] = 8'b11111101;
-			else
-				led[8:15] = 8'b11111111;
-		else
-			if(row==ball_position)
-			begin
-				reg [7:0] map;
-				case(ball_y_position)
-					3'b000: map = 8'b11111110 ;
-					3'b001: map = 8'b11111101 ;
-					3'b010: map = 8'b11111011 ;
-					3'b011: map = 8'b11110111 ;
-					3'b100: map = 8'b11101111 ;
-					3'b101: map = 8'b11011111 ;
-					3'b110: map = 8'b10111111 ;
-					3'b111: map = 8'b01111111 ; 
-				endcase
-				led[8:15] = map;
-			end
-			else
-				led[8:15] = 8'b11111111;
 		
-		//開始畫磚塊
-		led[16:23] = {~blockFirst[row], ~blockSecond[row], 6'b111111};
-		
-		// 顯示分數
-		if(count_digit_enable == 0)
+		// 如果 gameOverFlag ==1就畫圖
+		if(gameOverFlag)
 		begin
-			count_digit_enable = 1;
-			COM = 2'b10;
+			led[0:23] = 24'b111111111111111111111111;
+			if(row==0 || row==7) led[0:7] 		= 8'b01111110;
+			else if(row==1 || row==6) led[0:7]	= 8'b10111101;
+			else if(row==2 || row==5) led[0:7]	= 8'b11011011;
+			else if(row==3 || row==4) led[0:7]	= 8'b11100111;
+			else led[0:7]	= 8'b11111111;
 		end
 		else
-		//begin
-			count_digit_enable = 0;
-			COM = 2'b01;
-		//end
+		begin
+			// 開始畫板子 ( R )
+			if(row==plat_position || row==plat_position+1 || row==plat_position+2)
+				led[0:7] = 8'b11111110;
+			else
+				led[0:7] = 8'b11111111;
+				
+				
+			// 開始畫球 ( G )
+			if(handsOn)
+				if(row==plat_position+1)		// 放在正中間
+					led[8:15] = 8'b11111101;
+				else
+					led[8:15] = 8'b11111111;
+			else
+				if(row==ball_position)
+				begin
+					reg [7:0] map;
+					case(ball_y_position)
+						3'b000: map = 8'b11111110 ;
+						3'b001: map = 8'b11111101 ;
+						3'b010: map = 8'b11111011 ;
+						3'b011: map = 8'b11110111 ;
+						3'b100: map = 8'b11101111 ;
+						3'b101: map = 8'b11011111 ;
+						3'b110: map = 8'b10111111 ;
+						3'b111: map = 8'b01111111 ; 
+					endcase
+					led[8:15] = map;
+				end
+				else
+					led[8:15] = 8'b11111111;
+
+			//開始畫磚塊
+			led[16:23] = {~blockFirst[row], ~blockSecond[row], 6'b111111};
+			
+			// 顯示分數
+			if(count_digit_enable == 0)
+			begin
+				count_digit_enable = 1;
+				COM = 2'b10;
+			end
+			else
+			begin
+				count_digit_enable = 0;
+				COM = 2'b01;
+			end
+		end
+
+		
 		// 顯示個位
 		if(count_digit_enable == 0)
 		begin
