@@ -4,7 +4,9 @@ module FPGA_FINAL(
 	output reg [0:27] led,
 	input left, right,
 	input throw,
-	output testLED
+	output testLED,
+	output reg a,b,c,d,e,f,g;
+	output [1:0] count_digit_enable
 );
 
 	reg [7:0]blockFirst =  8'b11111111;
@@ -13,6 +15,9 @@ module FPGA_FINAL(
 	reg [2:0]plat_position; // 板子位置
 	reg [2:0]ball_position;	// 球  位置
 	reg [2:0]ball_y_position; // 球 y 座標
+
+	reg [3:0]count_digit;	//個位數分數
+	reg count_ten;			//十位數分數
 	
 	reg upPosition;
 	integer horizonPosition;
@@ -31,6 +36,7 @@ module FPGA_FINAL(
 		ball_position = 3'b011;		// 預設在 x=3 的位置
 		ball_y_position = 3'b010;	// 預設在 y=1 的位置
 		handsOn = 1;					// 預設為 為丟出狀態
+		score = 3'b0;               // 分數預設0
 		
 		upPosition = 1;				// 預設為 向上
 		horizonPosition = 0;			// 預設為 正中間方向
@@ -179,10 +185,16 @@ module FPGA_FINAL(
 
 
 
-					// // 判斷特殊狀態
+					// // 判斷特殊狀態 ， 撞到第一排磚塊
 					if(ball_y_position==6)
 						if(blockSecond[ball_position]==1)
 						begin
+							score_digit <= score_digit + 1'b1;
+							if(score_digit == 4'b1010)
+							begin
+								score_digit <= 4'b0;
+								socer_ten = 1;
+							end
 							blockSecond[ball_position] = 0;
 
 							if(upPosition) upPosition = 0;
@@ -197,10 +209,16 @@ module FPGA_FINAL(
 							if(upPosition) ball_y_position <= ball_y_position +1;
 							else ball_y_position <= ball_y_position -1;
 						end
-					// // 判斷特殊狀態
+					// // 判斷特殊狀態 ， 撞到第二排磚塊
 					if(ball_y_position==7)
 						if(blockFirst[ball_position]==1)
 						begin
+							score_digit <= score_digit + 1'b1;
+							if(score_digit == 4'b1010)
+							begin
+								score_digit <= 4'b0;
+								socer_ten = 1;
+							end
 							blockFirst[ball_position] = 0;
 
 							upPosition = 0;
@@ -266,6 +284,30 @@ module FPGA_FINAL(
 		//開始畫磚塊
 		led[16:23] = {~blockFirst[row], ~blockSecond[row], 6'b111111};
 	end
+
+	// 顯示分數
+	if(count_digit_enable == 1)
+		count_digit_enable = 0;
+	else
+		count_digit_enable = 1;
+	if(count_digit_enable) // 顯示個位
+		case(count_digit)
+			4'b0000:{a,b,c,d,e,f,g}=7'b0000001;
+			4'b0001:{a,b,c,d,e,f,g}=7'b1001111;
+			4'b0010:{a,b,c,d,e,f,g}=7'b0010010;
+			4'b0011:{a,b,c,d,e,f,g}=7'b0000110;
+			4'b0100:{a,b,c,d,e,f,g}=7'b1001100;
+			4'b0101:{a,b,c,d,e,f,g}=7'b0100100;
+			4'b0110:{a,b,c,d,e,f,g}=7'b0100000;
+			4'b0111:{a,b,c,d,e,f,g}=7'b0001111;
+			4'b1000:{a,b,c,d,e,f,g}=7'b0000000;
+			4'b1001:{a,b,c,d,e,f,g}=7'b0000100;
+		endcase
+	else // 顯示十位
+		case(count_ten)
+			1'b0:{a,b,c,d,e,f,g}=7'b0000001;
+			1'b1:{a,b,c,d,e,f,g}=7'b1001111;
+		endcase
 endmodule
 
 
