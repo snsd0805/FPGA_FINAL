@@ -1,6 +1,6 @@
 
 module FPGA_FINAL(
-	input CLK, reset, 
+	input CLK, reset, start,
 	output reg [0:27] led,
 	input left, right,
 	input throw,
@@ -48,167 +48,170 @@ module FPGA_FINAL(
 	// 判斷 所有操作
 	always @(posedge buttonclk)
 	begin
-		
-		
-		if(reset)
+		if(start)
 		begin
-			blockFirst =  8'b11111111;
-			blockSecond = 8'b11111111;
 			
-			plat_position <= 3'b010;		// 預設在 x=2 的位置
-			ball_position <= 3'b011;		// 預設在 x=3 的位置
-			ball_y_position <= 3'b010;	// 預設在 y=1 的位置
-			handsOn = 1;				// 預設為 為丟出狀態
 			
-			upPosition = 1;				// 預設為 向上
-			horizonPosition = 0;		// 預設為 正中間方向
-		end
-
-
-		// 判斷 向左
-		if(left)
-			if(plat_position>0)
+			if(reset)
 			begin
-				plat_position <= plat_position-1;
-				if(handsOn==1)ball_position <= ball_position-1;
-			end
-		
-		// 判斷 向右
-		if(right)
-			if(plat_position<5)
-			begin
-				plat_position <= plat_position+1;
-				if(handsOn==1)ball_position <= ball_position+1;
-			end
+				blockFirst =  8'b11111111;
+				blockSecond = 8'b11111111;
 				
-		// 判斷 丟出球
-		if(throw)
-			if(handsOn)
-			begin
-				handsOn = 0;
-			end
-			
-	
-
-			
-		
-		// 下方操作球的運行
-		// 除頻用
-		if(ballTime<2)
-			ballTime <= ballTime+1;
-		else
-		//開始判斷球的行進
-		begin
-			ballTime <= 0;
-			if(handsOn==0)	// 如果是丟出去的狀態才移動
-			begin
-				// 先判斷垂直方向
-				if(upPosition)
-					if(ball_y_position<7)	// 還沒到頂端
-						ball_y_position <= ball_y_position+1;
-					else
-					begin
-						ball_y_position <= ball_y_position-1;	// 到頂端就開始往下
-						upPosition = 0;
-					end
-				else
-					if(ball_y_position>1)
-						ball_y_position <= ball_y_position-1;
-
+				plat_position <= 3'b010;		// 預設在 x=2 的位置
+				ball_position <= 3'b011;		// 預設在 x=3 的位置
+				ball_y_position <= 3'b010;	// 預設在 y=1 的位置
+				handsOn = 1;				// 預設為 為丟出狀態
 				
+				upPosition = 1;				// 預設為 向上
+				horizonPosition = 0;		// 預設為 正中間方向
+			end
 
-				// 判斷水平方向
-				if(horizonPosition==1)
-					if(ball_position<7)
-						ball_position <= ball_position+1;	// 範圍內右移
-					else
-					begin
-						horizonPosition = -1;				// 超過範圍就轉向左邊
-						ball_position <= ball_position-1;
-					end
-				else if(horizonPosition==-1)
-					if(ball_position>0)
-						ball_position <= ball_position-1;	// 範圍內左移
-					else
-					begin
-						horizonPosition = 1;					// 超過範圍就轉向右邊
-						ball_position <= ball_position+1;
-					end
+
+			// 判斷 向左
+			if(left)
+				if(plat_position>0)
+				begin
+					plat_position <= plat_position-1;
+					if(handsOn==1)ball_position <= ball_position-1;
+				end
+			
+			// 判斷 向右
+			if(right)
+				if(plat_position<5)
+				begin
+					plat_position <= plat_position+1;
+					if(handsOn==1)ball_position <= ball_position+1;
+				end
 					
-				// 判斷特殊狀況(碰到板子)
-				if(ball_y_position==1)
-					if(ball_position==plat_position)
-					begin
-						if(horizonPosition==0) horizonPosition = -1;
-						else ball_y_position <= ball_y_position+1;
-						upPosition = 1;
-					end 
-					else if(ball_position==plat_position+1)
-					begin
-						upPosition = 1;
-						ball_y_position <= ball_y_position+1;
-					end
-					else if(ball_position==plat_position+2)
-					begin
-						if(horizonPosition==0) horizonPosition = 1;
-						else ball_y_position <= ball_y_position+1;
-						upPosition = 1;
-					end
-					else if(ball_position==plat_position-1 && horizonPosition==1)
-					begin
-						horizonPosition = -1;
-						ball_position <= ball_position-1;
-						ball_y_position <= ball_y_position+1;
-						upPosition = 1;
-					end
-					else if(ball_position==plat_position+3 && horizonPosition==-1)
-					begin
-						horizonPosition = 1;
-						ball_position <= ball_position+1;
-						ball_y_position <= ball_y_position+1;
-						upPosition = 1;
-					end
+			// 判斷 丟出球
+			if(throw)
+				if(handsOn)
+				begin
+					handsOn = 0;
+				end
+				
+		
+
+				
+			
+			// 下方操作球的運行
+			// 除頻用
+			if(ballTime<2)
+				ballTime <= ballTime+1;
+			else
+			//開始判斷球的行進
+			begin
+				ballTime <= 0;
+				if(handsOn==0)	// 如果是丟出去的狀態才移動
+				begin
+					// 先判斷垂直方向
+					if(upPosition)
+						if(ball_y_position<7)	// 還沒到頂端
+							ball_y_position <= ball_y_position+1;
+						else
+						begin
+							ball_y_position <= ball_y_position-1;	// 到頂端就開始往下
+							upPosition = 0;
+						end
 					else
-					begin
-						horizonPosition = 0;
-						ball_y_position <= ball_y_position-1;
-					end
+						if(ball_y_position>1)
+							ball_y_position <= ball_y_position-1;
 
+					
 
-
-
-				// // 判斷特殊狀態
-				if(ball_y_position==6)
-					if(blockSecond[ball_position]==1)
-					begin
-						blockSecond[ball_position] = 0;
-
-						if(upPosition) upPosition = 0;
-						else begin
-							horizonPosition = -horizonPosition;
+					// 判斷水平方向
+					if(horizonPosition==1)
+						if(ball_position<7)
+							ball_position <= ball_position+1;	// 範圍內右移
+						else
+						begin
+							horizonPosition = -1;				// 超過範圍就轉向左邊
+							ball_position <= ball_position-1;
+						end
+					else if(horizonPosition==-1)
+						if(ball_position>0)
+							ball_position <= ball_position-1;	// 範圍內左移
+						else
+						begin
+							horizonPosition = 1;					// 超過範圍就轉向右邊
+							ball_position <= ball_position+1;
+						end
+						
+					// 判斷特殊狀況(碰到板子)
+					if(ball_y_position==1)
+						if(ball_position==plat_position)
+						begin
+							if(horizonPosition==0) horizonPosition = -1;
+							else ball_y_position <= ball_y_position+1;
+							upPosition = 1;
+						end 
+						else if(ball_position==plat_position+1)
+						begin
+							upPosition = 1;
+							ball_y_position <= ball_y_position+1;
+						end
+						else if(ball_position==plat_position+2)
+						begin
+							if(horizonPosition==0) horizonPosition = 1;
+							else ball_y_position <= ball_y_position+1;
 							upPosition = 1;
 						end
-						if(ball_position==0) horizonPosition = 1;
-						if(ball_position==7) horizonPosition = -1;
+						else if(ball_position==plat_position-1 && horizonPosition==1)
+						begin
+							horizonPosition = -1;
+							ball_position <= ball_position-1;
+							ball_y_position <= ball_y_position+1;
+							upPosition = 1;
+						end
+						else if(ball_position==plat_position+3 && horizonPosition==-1)
+						begin
+							horizonPosition = 1;
+							ball_position <= ball_position+1;
+							ball_y_position <= ball_y_position+1;
+							upPosition = 1;
+						end
+						else
+						begin
+							horizonPosition = 0;
+							ball_y_position <= ball_y_position-1;
+						end
 
-						ball_position <= ball_position + horizonPosition;
-						if(upPosition) ball_y_position <= ball_y_position +1;
-						else ball_y_position <= ball_y_position -1;
-					end
-				// // 判斷特殊狀態
-				if(ball_y_position==7)
-					if(blockFirst[ball_position]==1)
-					begin
-						blockFirst[ball_position] = 0;
 
-						upPosition = 0;
-						
-						if(ball_position==0) horizonPosition = 1;
-						if(ball_position==7) horizonPosition = -1;
 
-						ball_position <= ball_position + horizonPosition;
-						ball_y_position <= ball_y_position -1;
-					end
+
+					// // 判斷特殊狀態
+					if(ball_y_position==6)
+						if(blockSecond[ball_position]==1)
+						begin
+							blockSecond[ball_position] = 0;
+
+							if(upPosition) upPosition = 0;
+							else begin
+								horizonPosition = -horizonPosition;
+								upPosition = 1;
+							end
+							if(ball_position==0) horizonPosition = 1;
+							if(ball_position==7) horizonPosition = -1;
+
+							ball_position <= ball_position + horizonPosition;
+							if(upPosition) ball_y_position <= ball_y_position +1;
+							else ball_y_position <= ball_y_position -1;
+						end
+					// // 判斷特殊狀態
+					if(ball_y_position==7)
+						if(blockFirst[ball_position]==1)
+						begin
+							blockFirst[ball_position] = 0;
+
+							upPosition = 0;
+							
+							if(ball_position==0) horizonPosition = 1;
+							if(ball_position==7) horizonPosition = -1;
+
+							ball_position <= ball_position + horizonPosition;
+							ball_y_position <= ball_y_position -1;
+						end
+				end
 			end
 		end
 	end
