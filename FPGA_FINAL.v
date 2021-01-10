@@ -211,7 +211,7 @@ module FPGA_FINAL(
 						if(blockSecond[ball_position]==1)
 						begin
 							count_digit <= count_digit + 1'b1;
-							if(count_digit == 4'b1010)
+							if(count_digit == 4'b1001)
 							begin
 								count_digit <= 4'b0;
 								count_ten = 1;
@@ -235,7 +235,7 @@ module FPGA_FINAL(
 						if(blockFirst[ball_position]==1)
 						begin
 							count_digit <= count_digit + 1'b1;
-							if(count_digit == 4'b1010)
+							if(count_digit == 4'b1001)
 							begin
 								count_digit <= 4'b0;
 								count_ten = 1;
@@ -323,12 +323,12 @@ module FPGA_FINAL(
 			if(count_digit_enable == 0)
 			begin
 				count_digit_enable = 1;
-				COM = 2'b10;
+				COM = 2'b01;
 			end
 			else
 			begin
 				count_digit_enable = 0;
-				COM = 2'b01;
+				COM = 2'b10;
 			end
 		end
 
