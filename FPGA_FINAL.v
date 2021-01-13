@@ -13,6 +13,7 @@ module FPGA_FINAL(
 
 	reg [7:0]blockFirst =  8'b11111111;
 	reg [7:0]blockSecond =  8'b00000000;
+	reg [0:7]barrier = 8'b00000011;
 
 	reg [2:0]plat_position; // 板子位置
 	reg [2:0]ball_position;	// 球  位置
@@ -221,7 +222,22 @@ module FPGA_FINAL(
 
 
 
+					// // 判斷特殊狀態 ， 撞到障礙物
+					if(ball_y_position==4)
+						if(barrier[ball_position]==1)
+						begin
+							if(upPosition) upPosition = 0;
+							else begin
+								horizonPosition = -horizonPosition;
+								upPosition = 1;
+							end
+							if(ball_position==0) horizonPosition = 1;
+							if(ball_position==7) horizonPosition = -1;
 
+							ball_position <= ball_position + horizonPosition;
+							if(upPosition) ball_y_position <= ball_y_position +1;
+							else ball_y_position <= ball_y_position -1;
+						end
 					// // 判斷特殊狀態 ， 撞到第一排磚塊
 					if(ball_y_position==6)
 						if(blockSecond[ball_position]==1)
@@ -266,6 +282,9 @@ module FPGA_FINAL(
 							ball_position <= ball_position + horizonPosition;
 							ball_y_position <= ball_y_position -1;
 						end
+						barrier = barrier<<1; // 障礙物右移
+						if(barrier == 8'b0)
+							barrier = 8'b00000011;
 				end
 			end
 			
@@ -401,6 +420,14 @@ module FPGA_FINAL(
 						3'b111: begin led[0] = 0 ; led[16] = 0; end
 					endcase
 				end
+			
+			// 畫障礙物
+			if(barrier[row] == 1)
+			begin
+				led[3] = 0;
+				led[11] = 0;
+			end
+			
 
 			// 顯示分數
 			if(count_digit_enable == 0)
