@@ -390,18 +390,16 @@ module FPGA_FINAL(
 			if(showBonus == 1)
 				if(row==Bonus_x)
 				begin
-					reg [7:0] map;
 					case(Bonus_y)
-						3'b000: map = 8'b11111110 ;
-						3'b001: map = 8'b11111101 ;
-						3'b010: map = 8'b11111011 ;
-						3'b011: map = 8'b11110111 ;
-						3'b100: map = 8'b11101111 ;
-						3'b101: map = 8'b11011111 ;
-						3'b110: map = 8'b10111111 ;
-						3'b111: map = 8'b01111111 ;
+						3'b000: begin led[7] = 0 ; led[23] = 0; end
+						3'b001: begin led[6] = 0 ; led[22] = 0; end
+						3'b010: begin led[5] = 0 ; led[21] = 0; end
+						3'b011: begin led[4] = 0 ; led[20] = 0; end
+						3'b100: begin led[3] = 0 ; led[19] = 0; end
+						3'b101: begin led[2] = 0 ; led[18] = 0; end
+						3'b110: begin led[1] = 0 ; led[17] = 0; end
+						3'b111: begin led[0] = 0 ; led[16] = 0; end
 					endcase
-					led[8:15] = map;
 				end
 
 			// 顯示分數
