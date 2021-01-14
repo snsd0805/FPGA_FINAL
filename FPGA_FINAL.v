@@ -8,7 +8,7 @@ module FPGA_FINAL(
 	input show_two_row,
 	output testLED,
 	output reg a,b,c,d,e,f,g,
-	output reg [0:1] COM
+	output reg [0:3] COM
 );
 
 	reg [7:0]blockFirst =  8'b11111111;
@@ -290,9 +290,12 @@ module FPGA_FINAL(
 							if(blockSecond == 8'b00000000 && blockFirst == 8'b00000000) gameFinishFlag = 1;
 						end
 						// 障礙物右移
-						barrier = barrier<<1;
-						if(barrier == 8'b0)
-							barrier = 8'b00000011;
+						if(ball_is_on_the_gronud == 0)
+						begin
+							barrier = barrier<<1;
+							if(barrier == 8'b0)
+								barrier = 8'b00000011;
+						end
 				end
 			end
 			
@@ -451,18 +454,18 @@ module FPGA_FINAL(
 			if(count_digit_enable == 0)
 			begin
 				count_digit_enable = 1;
-				COM = 2'b01;
+				COM = 4'b1110;
 			end
 			else
 			begin
 				count_digit_enable = 0;
-				COM = 2'b10;
+				COM = 4'b1101;
 			end
 		end
 
 		
 		// 顯示個位
-		if(count_digit_enable == 0)
+		if(count_digit_enable == 1)
 		begin
 			case(count_digit)
 				4'b0000:{a,b,c,d,e,f,g}=7'b0000001;
