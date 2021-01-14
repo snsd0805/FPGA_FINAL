@@ -8,7 +8,8 @@ module FPGA_FINAL(
 	input show_two_row,
 	output testLED,
 	output reg a,b,c,d,e,f,g,
-	output reg [0:3] COM
+	output reg [0:3] COM,
+	input highSpeed
 );
 
 	reg [7:0]blockFirst =  8'b11111111;
@@ -65,7 +66,7 @@ module FPGA_FINAL(
 
 	// 開始所有除頻器
 	divfreq F(CLK, divclk);
-	buttondivfreq BT(CLK, buttonclk);
+	buttondivfreq BT(CLK, highSpeed, buttonclk);
 
 	
 	
@@ -517,16 +518,29 @@ endmodule
 
 
 // 按鈕用的除頻器
-module buttondivfreq(input CLK, output reg CLK_div);
+module buttondivfreq(input CLK, highSpeed, output reg CLK_div);
 	reg[24:0] Count;
 	always @(posedge CLK)
 	begin
-		if(Count>2500000)			// 20 Hz
-			begin
-				Count <= 25'b0;
-				CLK_div <= ~CLK_div;
-			end
+		if(highSpeed == 0)
+		begin
+			if(Count>2500000)			// 20 Hz
+				begin
+					Count <= 25'b0;
+					CLK_div <= ~CLK_div;
+				end
+			else
+				Count <= Count + 1'b1;
+		end
 		else
-			Count <= Count + 1'b1;
+		begin
+			if(Count>1000000)			// 50 Hz
+				begin
+					Count <= 25'b0;
+					CLK_div <= ~CLK_div;
+				end
+			else
+				Count <= Count + 1'b1;
+		end
 	end
 endmodule
