@@ -27,6 +27,7 @@ module FPGA_FINAL(
 
 	reg handsOn; 				// bool，紀錄球現在丟出去了沒
 	reg gameOverFlag;
+	reg gameFinishFlag;
 	
 	reg showBonus;         // bool 顯示額外球
 	reg [2:0] Bonus_x;  // 額外球的位子x
@@ -54,6 +55,7 @@ module FPGA_FINAL(
 		horizonPosition = 0;			// 預設為 正中間方向
 		
 		gameOverFlag = 0;
+		gameFinishFlag = 0;
 		
 		showBonus = 0;
 		ball_is_on_the_gronud = 0;
@@ -77,7 +79,7 @@ module FPGA_FINAL(
 			
 			if(reset)
 			begin
-				if(life==3'b000)
+				if(gameOverFlag || gameFinishFlag)
 				begin
 					blockFirst =  8'b11111111;
 					if(show_two_row)
@@ -87,6 +89,7 @@ module FPGA_FINAL(
 
 					life = 3'b111;
 					gameOverFlag = 0;
+					gameFinishFlag = 0;
 					
 				end
 
@@ -261,6 +264,8 @@ module FPGA_FINAL(
 							ball_position <= ball_position + horizonPosition;
 							if(upPosition) ball_y_position <= ball_y_position +1;
 							else ball_y_position <= ball_y_position -1;
+							//判斷是否結束
+							if(blockSecond == 8'b00000000 && blockFirst == 8'b000000000) gameFinishFlag = 1;
 						end
 					// // 判斷特殊狀態 ， 撞到第二排磚塊
 					if(ball_y_position==7)
@@ -281,8 +286,11 @@ module FPGA_FINAL(
 
 							ball_position <= ball_position + horizonPosition;
 							ball_y_position <= ball_y_position -1;
+							//判斷是否結束
+							if(blockSecond == 8'b00000000 && blockFirst == 8'b00000000) gameFinishFlag = 1;
 						end
-						barrier = barrier<<1; // 障礙物右移
+						// 障礙物右移
+						barrier = barrier<<1;
 						if(barrier == 8'b0)
 							barrier = 8'b00000011;
 				end
@@ -367,6 +375,16 @@ module FPGA_FINAL(
 			else if(row==2 || row==5) led[0:7]	= 8'b11011011;
 			else if(row==3 || row==4) led[0:7]	= 8'b11100111;
 			else led[0:7]	= 8'b11111111;
+		end
+		// 顯示結束畫面
+		else if(gameFinishFlag)
+		begin
+			led[0:23] = 24'b111111111111111111111111;
+			if(row==0 || row==7) led[8:15] 		= 8'b11100111;
+			else if(row==1 || row==6) led[8:15]	= 8'b11011011;
+			else if(row==2 || row==5) led[8:15]	= 8'b10111101;
+			else if(row==3 || row==4) led[8:15]	= 8'b01111110;
+			else led[8:15]	= 8'b11111111;
 		end
 		else
 		begin
