@@ -8,11 +8,13 @@ module FPGA_FINAL(
 	input show_two_row,
 	output testLED,
 	output reg a,b,c,d,e,f,g,
-	output reg [0:1] COM
+	output reg [0:3] COM,
+	input highSpeed
 );
 
 	reg [7:0]blockFirst =  8'b11111111;
 	reg [7:0]blockSecond =  8'b00000000;
+	reg [0:7]barrier = 8'b00000011;
 
 	reg [2:0]plat_position; // 板子位置
 	reg [2:0]ball_position;	// 球  位置
@@ -26,6 +28,7 @@ module FPGA_FINAL(
 
 	reg handsOn; 				// bool，紀錄球現在丟出去了沒
 	reg gameOverFlag;
+	reg gameFinishFlag;
 	
 	reg showBonus;         // bool 顯示額外球
 	reg [2:0] Bonus_x;  // 額外球的位子x
@@ -53,6 +56,7 @@ module FPGA_FINAL(
 		horizonPosition = 0;			// 預設為 正中間方向
 		
 		gameOverFlag = 0;
+		gameFinishFlag = 0;
 		
 		showBonus = 0;
 		ball_is_on_the_gronud = 0;
@@ -62,7 +66,7 @@ module FPGA_FINAL(
 
 	// 開始所有除頻器
 	divfreq F(CLK, divclk);
-	buttondivfreq BT(CLK, buttonclk);
+	buttondivfreq BT(CLK, highSpeed, buttonclk);
 
 	
 	
@@ -76,7 +80,7 @@ module FPGA_FINAL(
 			
 			if(reset)
 			begin
-				if(life==3'b000)
+				if(gameOverFlag || gameFinishFlag)
 				begin
 					blockFirst =  8'b11111111;
 					if(show_two_row)
@@ -86,6 +90,7 @@ module FPGA_FINAL(
 
 					life = 3'b111;
 					gameOverFlag = 0;
+					gameFinishFlag = 0;
 					
 				end
 
@@ -221,7 +226,22 @@ module FPGA_FINAL(
 
 
 
+					// // 判斷特殊狀態 ， 撞到障礙物
+					if(ball_y_position==4)
+						if(barrier[ball_position]==1)
+						begin
+							if(upPosition) upPosition = 0;
+							else begin
+								horizonPosition = -horizonPosition;
+								upPosition = 1;
+							end
+							if(ball_position==0) horizonPosition = 1;
+							if(ball_position==7) horizonPosition = -1;
 
+							ball_position <= ball_position + horizonPosition;
+							if(upPosition) ball_y_position <= ball_y_position +1;
+							else ball_y_position <= ball_y_position -1;
+						end
 					// // 判斷特殊狀態 ， 撞到第一排磚塊
 					if(ball_y_position==6)
 						if(blockSecond[ball_position]==1)
@@ -245,6 +265,8 @@ module FPGA_FINAL(
 							ball_position <= ball_position + horizonPosition;
 							if(upPosition) ball_y_position <= ball_y_position +1;
 							else ball_y_position <= ball_y_position -1;
+							//判斷是否結束
+							if(blockSecond == 8'b00000000 && blockFirst == 8'b000000000) gameFinishFlag = 1;
 						end
 					// // 判斷特殊狀態 ， 撞到第二排磚塊
 					if(ball_y_position==7)
@@ -265,6 +287,15 @@ module FPGA_FINAL(
 
 							ball_position <= ball_position + horizonPosition;
 							ball_y_position <= ball_y_position -1;
+							//判斷是否結束
+							if(blockSecond == 8'b00000000 && blockFirst == 8'b00000000) gameFinishFlag = 1;
+						end
+						// 障礙物右移
+						if(ball_is_on_the_gronud == 0)
+						begin
+							barrier = barrier<<1;
+							if(barrier == 8'b0)
+								barrier = 8'b00000011;
 						end
 				end
 			end
@@ -349,6 +380,16 @@ module FPGA_FINAL(
 			else if(row==3 || row==4) led[0:7]	= 8'b11100111;
 			else led[0:7]	= 8'b11111111;
 		end
+		// 顯示結束畫面
+		else if(gameFinishFlag)
+		begin
+			led[0:23] = 24'b111111111111111111111111;
+			if(row==0 || row==7) led[8:15] 		= 8'b11100111;
+			else if(row==1 || row==6) led[8:15]	= 8'b11011011;
+			else if(row==2 || row==5) led[8:15]	= 8'b10111101;
+			else if(row==3 || row==4) led[8:15]	= 8'b01111110;
+			else led[8:15]	= 8'b11111111;
+		end
 		else
 		begin
 			// 開始畫板子 ( R )
@@ -390,36 +431,42 @@ module FPGA_FINAL(
 			if(showBonus == 1)
 				if(row==Bonus_x)
 				begin
-					reg [7:0] map;
 					case(Bonus_y)
-						3'b000: map = 8'b11111110 ;
-						3'b001: map = 8'b11111101 ;
-						3'b010: map = 8'b11111011 ;
-						3'b011: map = 8'b11110111 ;
-						3'b100: map = 8'b11101111 ;
-						3'b101: map = 8'b11011111 ;
-						3'b110: map = 8'b10111111 ;
-						3'b111: map = 8'b01111111 ;
+						3'b000: begin led[7] = 0 ; led[23] = 0; end
+						3'b001: begin led[6] = 0 ; led[22] = 0; end
+						3'b010: begin led[5] = 0 ; led[21] = 0; end
+						3'b011: begin led[4] = 0 ; led[20] = 0; end
+						3'b100: begin led[3] = 0 ; led[19] = 0; end
+						3'b101: begin led[2] = 0 ; led[18] = 0; end
+						3'b110: begin led[1] = 0 ; led[17] = 0; end
+						3'b111: begin led[0] = 0 ; led[16] = 0; end
 					endcase
-					led[8:15] = map;
 				end
+			
+			// 畫障礙物
+			if(barrier[row] == 1)
+			begin
+				led[3] = 0;
+				led[11] = 0;
+			end
+			
 
 			// 顯示分數
 			if(count_digit_enable == 0)
 			begin
 				count_digit_enable = 1;
-				COM = 2'b01;
+				COM = 4'b1110;
 			end
 			else
 			begin
 				count_digit_enable = 0;
-				COM = 2'b10;
+				COM = 4'b1101;
 			end
 		end
 
 		
 		// 顯示個位
-		if(count_digit_enable == 0)
+		if(count_digit_enable == 1)
 		begin
 			case(count_digit)
 				4'b0000:{a,b,c,d,e,f,g}=7'b0000001;
@@ -471,16 +518,29 @@ endmodule
 
 
 // 按鈕用的除頻器
-module buttondivfreq(input CLK, output reg CLK_div);
+module buttondivfreq(input CLK, highSpeed, output reg CLK_div);
 	reg[24:0] Count;
 	always @(posedge CLK)
 	begin
-		if(Count>2500000)			// 20 Hz
-			begin
-				Count <= 25'b0;
-				CLK_div <= ~CLK_div;
-			end
+		if(highSpeed == 0)
+		begin
+			if(Count>2500000)			// 20 Hz
+				begin
+					Count <= 25'b0;
+					CLK_div <= ~CLK_div;
+				end
+			else
+				Count <= Count + 1'b1;
+		end
 		else
-			Count <= Count + 1'b1;
+		begin
+			if(Count>1000000)			// 50 Hz
+				begin
+					Count <= 25'b0;
+					CLK_div <= ~CLK_div;
+				end
+			else
+				Count <= Count + 1'b1;
+		end
 	end
 endmodule
